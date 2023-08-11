@@ -1,0 +1,165 @@
+<!--
+  Copyright (c) 2006-2018, JGraph Ltd
+  
+  Hello, World! example for mxGraph. This example demonstrates using
+  a DOM node to create a graph and adding vertices and edges.
+-->
+<html>
+  <head>
+    <title>Hello, World! example for mxGraph</title>
+    <!-- Sets the basepath for the library if not in same directory -->
+    <script type="text/javascript">
+      mxBasePath = './js';
+    </script>
+
+    <!-- Loads and initializes the library -->
+    <script type="text/javascript" src="./js/mxClient.min.js"></script>
+
+    <!-- Example code -->
+    <script type="text/javascript">
+      // Program starts here. Creates a sample graph in the
+      // DOM node with the specified ID. This function is invoked
+      // from the onLoad event handler of the document (see below).
+      mxShape.prototype.constraints = [new mxConnectionConstraint(new mxPoint(0.25, 0), true),
+										 new mxConnectionConstraint(new mxPoint(0.5, 0), true),
+										 new mxConnectionConstraint(new mxPoint(0.75, 0), true),
+		        	              		 new mxConnectionConstraint(new mxPoint(0, 0.25), true),
+		        	              		 new mxConnectionConstraint(new mxPoint(0, 0.5), true),
+		        	              		 new mxConnectionConstraint(new mxPoint(0, 0.75), true),
+		        	            		 new mxConnectionConstraint(new mxPoint(1, 0.25), true),
+		        	            		 new mxConnectionConstraint(new mxPoint(1, 0.5), true),
+		        	            		 new mxConnectionConstraint(new mxPoint(1, 0.75), true),
+		        	            		 new mxConnectionConstraint(new mxPoint(0.25, 1), true),
+		        	            		 new mxConnectionConstraint(new mxPoint(0.5, 1), true),
+		        	            		 new mxConnectionConstraint(new mxPoint(0.75, 1), true)];
+      function main(container) {
+        // Checks if the browser is supported
+        if (!mxClient.isBrowserSupported()) {
+          // Displays an error message if the browser is not supported.
+          mxUtils.error('Browser is not supported!', 200, false);
+          return;
+        }
+        
+        // 构造一个graph
+        var graph = new mxGraph(container);
+					// Ports are not used as terminals for edges, they are
+				// only used to compute the graphical connection point
+			
+
+
+
+        // 鼠标框选
+        new mxRubberband(graph);
+        // i 在图形中创建默认组件
+        var parent = graph.getDefaultParent();
+
+        // 添加节点
+        graph.getModel().beginUpdate();
+        try {
+          // 线条label定位
+          var v1 = graph.insertVertex(parent, null, 'Hello,', 20, 20, 60, 60);
+          var v11 = graph.insertVertex(v1, null, '', 1, 1, 10, 10,'shape=ellipse;perimeter=ellipsePerimeter');
+					v11.geometry.offset = new mxPoint(-5, -5);
+					v11.geometry.relative = true;
+          
+          // 圆形的节点
+          var v2 = graph.insertVertex(parent, null, 'World!', 200, 150, 60, 60,'shape=ellipse;perimeter=ellipsePerimeter');
+          //'shape=ellipse;perimeter=ellipsePerimeter'圆形的锚点
+          var v12 = graph.insertVertex(v1, null, '', 1, 0, 10, 10,'shape=ellipse;perimeter=ellipsePerimeter');
+					v12.geometry.offset = new mxPoint(-5, -5);
+					v12.geometry.relative = true;
+
+          //节点是否可以折叠
+// 　　graph.getModel().setCollapsed(v2, 1);
+
+          var e1 = graph.insertEdge(
+            parent,
+            null,
+            'aaaa',
+            v1,
+            v2,
+            'strokeWidth=3;endArrow=block;endSize=2;endFill=1;strokeColor=black;rounded=1;',
+          );
+          //线条拐点
+          e1.geometry.points = [new mxPoint(230, 50)];
+          // relative position，以线条中点为中心
+          // e1.geometry.x = 0; // [-1,1] 调整 label 沿连接线的位置
+          // e1.geometry.y = 10; // 调整label 在正交线上的距离
+          graph.orderCells(true, [e1]);
+        } finally {
+          graph.getModel().endUpdate();
+        }
+      
+        // 开启可以拖拽建立关系,可以连线
+        graph.setConnectable(true);
+        // 开启方块上的文字编辑功能,默认true
+        graph.setCellsEditable(true);
+        // 启用对齐线帮助定位
+        mxGraphHandler.prototype.guidesEnabled = true;
+        // 选择基本元素开启
+        // 禁用浏览器默认的右键菜单栏
+        mxEvent.disableContextMenu(container);
+        // 禁止改变元素大小
+        graph.setCellsResizable(false);
+        // 容器大小自适应
+        graph.setResizeContainer(false);
+        // 可否重复连接
+        graph.setMultigraph(false);
+        // 放大
+        graph.zoomIn();
+        //缩小
+        graph.zoomOut();
+        //还原
+        graph.zoomActual();
+        //居中缩放
+        graph.centerZoom = true;
+
+        var state = graph.view.getState(e1);
+        // debugger;
+        state.shape.node
+          .getElementsByTagName('path')[0]
+          .removeAttribute('visibility');
+        state.shape.node
+          .getElementsByTagName('path')[0]
+          .setAttribute('stroke-width', '6');
+        state.shape.node
+          .getElementsByTagName('path')[0]
+          .setAttribute('stroke', 'lightGray');
+        state.shape.node
+          .getElementsByTagName('path')[1]
+          .setAttribute('class', 'flow');
+        // document.body.appendChild(
+        //   mxUtils.button('图中显示转化的xml信息', function (evt) {
+        //     var encoder = new mxCodec();
+        //     var node = encoder.encode(graph.getModel());
+        //     console.log(node);
+        //   }),
+        // );
+        //将图形的xml进行回显
+        //            var xml =''
+        // var doc = mxUtils.parseXml(xml);
+        // var codec = new mxCodec(doc);
+        // codec.decode(doc.documentElement, graph.getModel());
+      }
+    </script>
+  </head>
+
+  <!-- Page passes the container for the graph to the program -->
+
+  <body onload="main(document.getElementById('graphContainer'))">
+    <!-- Creates a container for the graph with a grid wallpaper -->
+    <div
+      id="graphContainer"
+      style="
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        background: url('js/images/grid.gif');
+        cursor: default;
+      "
+    ></div>
+  </body>
+</html>

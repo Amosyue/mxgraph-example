@@ -1,0 +1,272 @@
+<!--
+  当鼠标划过节点上显示图标
+-->
+<html>
+  <head>
+    <title>Hello, World! example for mxGraph</title>
+    <!-- Sets the basepath for the library if not in same directory -->
+    <script type="text/javascript">
+      mxBasePath = "./js";
+    </script>
+
+    <!-- Loads and initializes the library -->
+    <script type="text/javascript" src="./js/mxClient.min.js"></script>
+
+    <!-- Example code -->
+    <script type="text/javascript">
+      class mxIconSet {
+        constructor(state) {
+          this.images = [];
+          const graph = state.view.graph;
+
+          //复制功能
+          const copyImg = mxUtils.createImage("./js/images/copy.png");
+          copyImg.setAttribute("title", "复制");
+          copyImg.style.position = "absolute";
+          copyImg.style.cursor = "pointer";
+          copyImg.style.width = "16px";
+          copyImg.style.height = "16px";
+          copyImg.style.left = state.x + state.width + "px";
+          copyImg.style.top = state.y + state.height + "px";
+
+          mxEvent.addGestureListeners(
+            copyImg,
+            mxUtils.bind(this, function (evt) {
+              var s = graph.gridSize;
+              graph.setSelectionCells(graph.moveCells([state.cell], s, s, true));
+              mxEvent.consume(evt);
+              this.destroy();
+            })
+          );
+          state.view.graph.container.appendChild(copyImg);
+          this.images.push(copyImg);
+          //删除功能
+          var delImg = mxUtils.createImage("./js/images/delete2.png");
+          delImg.setAttribute("title", "删除");
+          delImg.style.position = "absolute";
+          delImg.style.cursor = "pointer";
+          delImg.style.width = "16px";
+          delImg.style.height = "16px";
+          delImg.style.left = state.x + state.width + "px";
+          delImg.style.top = state.y - 16 + "px";
+
+          mxEvent.addGestureListeners(
+            delImg,
+            mxUtils.bind(this, function (evt) {
+              // Disables dragging the image
+              mxEvent.consume(evt);
+            })
+          );
+
+          mxEvent.addListener(
+            delImg,
+            "click",
+            mxUtils.bind(this, function (evt) {
+              graph.removeCells([state.cell]);
+              mxEvent.consume(evt);
+              this.destroy();
+            })
+          );
+
+          state.view.graph.container.appendChild(delImg);
+          this.images.push(delImg);
+        }
+
+        destroy() {
+          if (this.images != null) {
+            for (var i = 0; i < this.images.length; i++) {
+              var img = this.images[i];
+              img.parentNode.removeChild(img);
+            }
+          }
+
+          this.images = null;
+        }
+      }
+
+      // 主函数
+      function main(container) {
+        // Checks if the browser is supported
+        if (!mxClient.isBrowserSupported()) {
+          // Displays an error message if the browser is not supported.
+          mxUtils.error("Browser is not supported!", 200, false);
+          return;
+        }
+
+        // 构造一个graph
+        var graph = new mxGraph(container);
+        // 更新元素的样式方法
+        function updateStyle(state, hover) {
+          if (hover) {
+            state.style[mxConstants.STYLE_FILLCOLOR] = "#ff0000";
+          }
+
+          // Sets rounded style for both cases since the rounded style
+          // is not set in the default style and is therefore inherited
+          // once it is set, whereas the above overrides the default value
+          state.style[mxConstants.STYLE_ROUNDED] = hover ? "1" : "0";
+          state.style[mxConstants.STYLE_STROKEWIDTH] = hover ? "4" : "1";
+          state.style[mxConstants.STYLE_FONTSTYLE] = hover ? mxConstants.FONT_BOLD : "0";
+        }
+        // 悬浮热区大小
+        const iconTolerance = 30;
+        graph.addMouseListener({
+          currentState: null,
+          currentIconSet: null,
+          mouseDown(sender, me) {
+            // Hides icons on mouse down
+            if (this.currentState != null) {
+              this.dragLeave(me.getEvent(), this.currentState);
+              this.currentState = null;
+            }
+          },
+          mouseMove(sender, me) {
+            if (this.currentState != null && (me.getState() == this.currentState || me.getState() == null)) {
+              var tol = iconTolerance;
+              var tmp = new mxRectangle(me.getGraphX() - tol, me.getGraphY() - tol, 2 * tol, 2 * tol);
+
+              if (mxUtils.intersects(tmp, this.currentState)) {
+                return;
+              }
+            }
+
+            var tmp = graph.view.getState(me.getCell());
+
+            // Ignores everything but vertices
+            if (graph.isMouseDown || (tmp != null && !graph.getModel().isVertex(tmp.cell))) {
+              tmp = null;
+            }
+
+            if (tmp != this.currentState) {
+              if (this.currentState != null) {
+                this.dragLeave(me.getEvent(), this.currentState);
+              }
+
+              this.currentState = tmp;
+
+              if (this.currentState != null) {
+                this.dragEnter(me.getEvent(), this.currentState);
+              }
+            }
+          },
+          mouseUp(sender, me) {},
+          dragEnter(evt, state) {
+            if (this.currentIconSet == null) {
+              this.currentIconSet = new mxIconSet(state);
+            }
+            // 添加样式
+            if (state != null) {
+              this.previousStyle = state.style;
+              state.style = mxUtils.clone(state.style);
+              updateStyle(state, true);
+              state.shape.apply(state);
+              state.shape.redraw();
+
+              if (state.text != null) {
+                state.text.apply(state);
+                state.text.redraw();
+              }
+            }
+          },
+          dragLeave(evt, state) {
+            if (this.currentIconSet != null) {
+              this.currentIconSet.destroy();
+              this.currentIconSet = null;
+            }
+            // 删除样式
+            if (state != null) {
+              state.style = this.previousStyle;
+              updateStyle(state, false);
+              state.shape.apply(state);
+              state.shape.redraw();
+
+              if (state.text != null) {
+                state.text.apply(state);
+                state.text.redraw();
+              }
+            }
+          },
+        });
+        // i 在图形中创建默认组件
+        var parent = graph.getDefaultParent();
+
+        // 添加节点
+        graph.getModel().beginUpdate();
+        try {
+          // 线条label定位
+          var v1 = graph.insertVertex(parent, null, "Hello,", 50, 50, 60, 60);
+          var v11 = graph.insertVertex(v1, null, "", 1, 1, 10, 10, "shape=ellipse;perimeter=ellipsePerimeter");
+          v11.geometry.offset = new mxPoint(-5, -5);
+          v11.geometry.relative = true;
+
+          // 圆形的节点
+          var v2 = graph.insertVertex(parent, null, "World!", 200, 150, 60, 60);
+          //'shape=ellipse;perimeter=ellipsePerimeter'圆形的锚点
+          var v12 = graph.insertVertex(v1, null, "", 1, 0, 10, 10, "shape=ellipse;perimeter=ellipsePerimeter");
+          v12.geometry.offset = new mxPoint(-5, -5);
+          v12.geometry.relative = true;
+
+          var e1 = graph.insertEdge(
+            parent,
+            null,
+            "",
+            v1,
+            v2,
+            "strokeWidth=3;endArrow=block;endSize=2;endFill=1;strokeColor=black;rounded=1;"
+          );
+          //线条拐点
+          e1.geometry.points = [new mxPoint(230, 50)];
+          // relative position，以线条中点为中心
+          // e1.geometry.x = 0; // [-1,1] 调整 label 沿连接线的位置
+          // e1.geometry.y = 10; // 调整label 在正交线上的距离
+          graph.orderCells(true, [e1]);
+        } finally {
+          graph.getModel().endUpdate();
+        }
+
+        // 开启可以拖拽建立关系,可以连线
+        graph.setConnectable(true);
+        // 开启方块上的文字编辑功能,默认true
+        graph.setCellsEditable(true);
+        // 启用对齐线帮助定位
+        mxGraphHandler.prototype.guidesEnabled = true;
+        // 选择基本元素开启
+        // 禁用浏览器默认的右键菜单栏
+        mxEvent.disableContextMenu(container);
+        // 禁止改变元素大小
+
+        // document.body.appendChild(
+        //   mxUtils.button('图中显示转化的xml信息', function (evt) {
+        //     var encoder = new mxCodec();
+        //     var node = encoder.encode(graph.getModel());
+        //     console.log(node);
+        //   }),
+        // );
+        //将图形的xml进行回显
+        //            var xml =''
+        // var doc = mxUtils.parseXml(xml);
+        // var codec = new mxCodec(doc);
+        // codec.decode(doc.documentElement, graph.getModel());
+      }
+    </script>
+  </head>
+
+  <!-- Page passes the container for the graph to the program -->
+
+  <body onload="main(document.getElementById('graphContainer'))">
+    <!-- Creates a container for the graph with a grid wallpaper -->
+    <div
+      id="graphContainer"
+      style="
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        background: url('js/images/grid.gif');
+        cursor: default;
+      "
+    ></div>
+  </body>
+</html>

@@ -1,0 +1,170 @@
+<!--
+  当鼠标划过节点上显示图标
+-->
+<html>
+  <head>
+    <title>Hello, World! example for mxGraph</title>
+    <style>
+      body div.mxPopupMenu {  
+            -webkit-box-shadow: 3px 3px 6px #C0C0C0;  
+            -moz-box-shadow: 3px 3px 6px #C0C0C0;  
+            box-shadow: 3px 3px 6px #C0C0C0;  
+            background: white;  
+            position: absolute;  
+            border: 3px solid #e7e7e7;  
+            padding: 3px;  
+        }  
+        body table.mxPopupMenu {  
+            border-collapse: collapse;  
+            margin: 0px;  
+        }  
+        body tr.mxPopupMenuItem {  
+            color: black;  
+            cursor: default;  
+        }  
+        body td.mxPopupMenuItem {  
+            padding: 6px 60px 6px 30px;  
+            font-family: Arial;  
+            font-size: 10pt;  
+        }  
+        body td.mxPopupMenuIcon {  
+            background-color: white;  
+            padding: 0px;  
+        }  
+        body tr.mxPopupMenuItemHover {  
+            background-color: #eeeeee;  
+            color: black;  
+        }  
+        table.mxPopupMenu hr {  
+            border-top: solid 1px #cccccc;  
+        }  
+        table.mxPopupMenu tr {  
+            font-size: 4pt;  
+        }  
+    </style>
+    <!-- Sets the basepath for the library if not in same directory -->
+    <script type="text/javascript">
+      mxBasePath = "./js";
+    </script>
+
+    <!-- Loads and initializes the library -->
+    <script type="text/javascript" src="./js/mxClient.min.js"></script>
+
+    <!-- Example code -->
+    <script type="text/javascript">
+      // 主函数
+      function main(container) {
+        // Checks if the browser is supported
+        if (!mxClient.isBrowserSupported()) {
+          // Displays an error message if the browser is not supported.
+          mxUtils.error("Browser is not supported!", 200, false);
+          return;
+        }
+
+        // 构造一个graph
+        var graph = new mxGraph(container);
+        var parent = graph.getDefaultParent();
+
+        //设置启用,就是允不允许你改变CELL的形状内容。
+        // graph.setEnabled(true);
+        //禁止选中元素
+        // graph.setCellsSelectable(false);
+
+        //节点不可改变大小
+        graph.setCellsResizable(false);
+        graph.setHtmlLabels(true);
+        //是否移动元素和编辑
+        graph.setVertexLabelsMovable(false); // 允许移动 Vertex 的 Label
+        //居中缩放
+        graph.centerZoom = true; //默认就是true
+
+        graph.panningHandler.useLeftButtonForPanning = true;
+        graph.panningHandler.ignoreCell = true;
+        graph.container.style.cursor = "move";
+        graph.setPanning(true);
+
+        graph.setAllowDanglingEdges(false);
+
+        graph.getModel().beginUpdate();
+        // graph.getLabel = function (cell) {
+        //   debugger
+        //   if (this.getModel().isVertex(cell)) {
+        //     return '111'
+        //   }
+        //   if (this.getModel().isEdge(cell)) {
+        //     return '222'
+        //   }
+        //   return mxGraph.prototype.getLabel.apply(this, arguments);
+        // };
+        try {
+          // 线条label定位
+          var v1 = graph.insertVertex(parent, "id_1", "Hello,", 50, 50, 60, 60);
+          // 圆形的节点
+          var v2 = graph.insertVertex(parent, "id_2", "World!", 200, 150, 60, 60);
+
+          var v3 = graph.insertVertex(parent, "id_3", "中国", 500, 250, 90, 90);
+          //'shape=ellipse;perimeter=ellipsePerimeter'圆形的锚点
+          var e1 = graph.insertEdge(
+            parent,
+            null,
+            "edge_1",
+            v1,
+            v2,
+            "strokeWidth=3;endArrow=block;endSize=2;endFill=1;strokeColor=black;rounded=1;"
+          );
+          var e2 = graph.insertEdge(
+            parent,
+            "edge_2",
+            "aaaaaaaaaa",
+            v2,
+            v3,
+            "strokeWidth=3;endArrow=block;endSize=2;endFill=1;strokeColor=blue;rounded=1;backgroundColor=red"
+          );
+          //线条拐点
+          // relative position，以线条中点为中心
+          // e1.geometry.x = 0; // [-1,1] 调整 label 沿连接线的位置
+          // e1.geometry.y = 10; // 调整label 在正交线上的距离
+        } finally {
+          graph.getModel().endUpdate();
+        }
+        // 设置自动扩大鼠标悬停
+        graph.panningHandler.autoExpand = true;
+        // // 覆写右键单击事件
+        // 禁用鼠标右键
+        mxEvent.disableContextMenu(container);
+        graph.popupMenuHandler.factoryMethod = function (menu, cell, evt) {
+          if (cell != null && graph.getModel().isVertex(cell)) {
+            menu.addItem("菜单一", null, function () {
+              console.log("1");
+            });
+          }
+          menu.addSeparator();
+          menu.addItem("退出", null, function () {
+            console.log(self.graph.getSelectionCount());
+          });
+        };
+       
+      }
+    </script>
+  </head>
+
+  <!-- Page passes the container for the graph to the program -->
+
+  <body onload="main(document.getElementById('graphContainer'))">
+    <!-- Creates a container for the graph with a grid wallpaper -->
+    <!-- <button onclick="changeEdge">修改边</button> -->
+    <div
+      id="graphContainer"
+      style="
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        height: 80%;
+        box-sizing: border-box;
+        border: 1px solid #ddd;
+        background: url('js/images/grid.gif');
+        cursor: default;
+      "
+    ></div>
+  </body>
+</html>
